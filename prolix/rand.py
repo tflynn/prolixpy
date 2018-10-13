@@ -1,6 +1,6 @@
 import sys
 import random
-
+import standard_logger
 import words
 
 
@@ -10,6 +10,9 @@ class RandomString:
     MIN_UTF8_CHAR_VALUE = 32
     MAX_UTF8_CHAR_VALUE = int(0x110000) - 1
     SECURE_RNG = random.SystemRandom()
+
+    def __init__(self, logger=None):
+        self.logger = logger if logger else standard_logger.get_logger("RandomString")
 
     def secure_rng(self):
         """
@@ -35,6 +38,15 @@ class RandomString:
         except Exception:
             return None
 
+    def random_ascii_char(self):
+        """
+        Get a random ASCII char
+
+        :return: String with single ASCII character or None if any error
+        :rtype: str
+        """
+        return self.random_utf8_char(lower=33, upper=126)
+
     def random_utf8_string(self, len=10, lower=None, upper=None):
         """
         Generate a UTF8 string of the specified length with random characters
@@ -50,7 +62,34 @@ class RandomString:
             if rc:
                 rs = rs + rc
 
-        return rs
+        try:
+            rs.encode('UTF8')
+            return rs
+        except UnicodeEncodeError:
+            self.logger.info("random_utf8_string produced a non-UTF8 string")
+            return self.random_utf8_string(len=len, lower=lower, upper=upper)
+
+    def random_ascii_string(self, len=10):
+        """
+        Get a random ASCII string
+        :param int len: Length of string
+        :return: ASCII string
+        :rtype: str
+        """
+        return self.random_utf8_string(len=len, lower=33, upper=126)
+
+    def is_ascii(self, s):
+        """
+        Test to see whether supplied string is ASCII
+        :param str s: String to test
+        :return: True if ASCII, False otherwise
+        :rtype: bool
+        """
+        try:
+            s.encode('ascii')
+            return True
+        except UnicodeEncodeError:
+            return False
 
 
 class RandomInts:

@@ -12,7 +12,8 @@ setup(
     install_requires=[
         'standard_logger>=0.4',
         'run_command>=1.0',
-        'words>=0.1'],
+        'words>=0.1',
+        'redis>=2.10.6'],
     test_suite='nose.collector',
     tests_require=['nose'],
     zip_safe=False

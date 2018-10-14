@@ -30,8 +30,8 @@ class TestStore(unittest.TestCase):
         value = rs.random_utf8_string(len=20)
         self.redis_store.store(key=key, item=value)
         ret_val = self.redis_store.get(key=key)
-        self.assertEqual(value, ret_val)
         self.redis_store.delete(key=key)
+        self.assertEqual(value, ret_val)
 
     def test_003_test_redis_set_expire_and_get(self):
         rs = rand.RandomString()
@@ -40,7 +40,7 @@ class TestStore(unittest.TestCase):
         self.redis_store.store_with_expiration(key=key, item=value, exp_seconds=1)
         ret_val = self.redis_store.get(key=key)
         self.assertEqual(value, ret_val)
-        time.sleep(2)
+        time.sleep(1)
         # Check to verify item expires
         ret_val = self.redis_store.get(key=key)
         self.assertTrue(ret_val is None)

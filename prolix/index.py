@@ -11,7 +11,6 @@ class IndexEntry:
         self.storage_key = ""
         self.mapping = []
         self.steno_seq = []
-        self.steno_text = ""
         self.ttl_seconds = 60 * IndexEntry.DEFAULT_TTL_MINS
 
     def to_json_str(self):
@@ -25,12 +24,6 @@ class IndexEntry:
 
     def __eq__(self, other):
         return self.__dict__ == other.__dict__
-        # return (self.storage_key == other.storage_key
-        #         and self.mapping == other.mapping
-        #         and self.steno_seq == other.steno_seq
-        #         and self.steno_text == other.steno_text
-        #         and self.ttl_seconds == other.ttl_seconds
-        # )
 
     def __str__(self):
         sep = " "
@@ -39,7 +32,6 @@ class IndexEntry:
                 + sep + "sk: {0}".format(self.storage_key)
                 + sep + "m: {0}".format('...')
                 + sep + "ss: {0}".format('...')
-                + sep + "st: {0}".format('...')
                 + sep + "ttl: {0}".format(self.ttl_seconds)
                 )
 

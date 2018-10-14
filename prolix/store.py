@@ -73,25 +73,6 @@ class RedisStore(BaseStore):
             self.logger.error("Error initializing Redis {0}".format(e))
             sys.exit(1)
 
-    def check_key(self, key, exit_on_error=False):
-        """
-        Verify that the key is valid
-
-        The current redis driver only accepts ASCII keys
-
-        :param str key: Key to check
-        :param bool exit_on_error: Exit on error - default False
-        :return: True if valid (ASCII), False otherwise
-        :rtype: bool
-        """
-        is_ascii = rand.RandomString().is_ascii(key)
-        if not is_ascii:
-            self.logger.error("Supplied key {0} is not ASCII as required.".format(key))
-            if exit_on_error:
-                sys.exit(1)
-
-        return is_ascii
-
     def store(self, key=None, item=None):
         """
         Store an item
@@ -104,8 +85,6 @@ class RedisStore(BaseStore):
         if not key:
             self.logger.error("RedisStore:store_with_expiration no key specified")
             errors = True
-        if key and not self.check_key(key):
-            errors = True
         if not item:
             self.logger.error("RedisStore:store_with_expiration no item specified")
             errors = True
@@ -113,7 +92,8 @@ class RedisStore(BaseStore):
             try:
                 item = str(item)
             except Exception as e:
-                self.logger.error(("RedisStore:store_with_expiration error converting object {0}"
+                self.logger.error(
+                    ("RedisStore:store_with_expiration error converting object {0}"
                                    + " to string {1}").format(key,e))
                 errors = True
 
@@ -139,8 +119,6 @@ class RedisStore(BaseStore):
         if not key:
             self.logger.error("RedisStore:store_with_expiration no key specified")
             errors = True
-        if key and not self.check_key(key):
-            errors = True
         if not item:
             self.logger.error("RedisStore:store_with_expiration no item specified")
             errors = True
@@ -156,7 +134,7 @@ class RedisStore(BaseStore):
 
         if not errors:
             try:
-                self.redis.setex(key, exp_seconds, item)
+                self.redis.setex(key, self.expiration_seconds, item)
             except Exception as e:
                 self.logger.error("RedisStore:store_with_expiration error storing object {0} {1}".format(key, e))
                 errors = True
@@ -174,8 +152,6 @@ class RedisStore(BaseStore):
         errors = False
         if not key:
             self.logger.error("RedisStore:get no key specified")
-            errors = True
-        if key and not self.check_key(key):
             errors = True
 
         if not errors:
@@ -202,8 +178,8 @@ class RedisStore(BaseStore):
         if not key:
             self.logger.error("RedisStore:delete no key specified")
             errors = True
-        if key and not self.check_key(key):
-            errors = True
+        # if key and not self.check_key(key):
+        #     errors = True
 
         if not errors:
             try:

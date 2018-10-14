@@ -6,6 +6,8 @@ class IndexEntry:
     DEFAULT_TTL_MINS = 5
 
     def __init__(self):
+        self.object_type = "IndexType"
+        self.object_type_version = "V1"
         self.storage_key = ""
         self.mapping = []
         self.steno_seq = []
@@ -20,6 +22,29 @@ class IndexEntry:
         :rtype: str
         """
         return json.dumps(self.__dict__)
+
+    def __eq__(self, other):
+        return self.__dict__ == other.__dict__
+        # return (self.storage_key == other.storage_key
+        #         and self.mapping == other.mapping
+        #         and self.steno_seq == other.steno_seq
+        #         and self.steno_text == other.steno_text
+        #         and self.ttl_seconds == other.ttl_seconds
+        # )
+
+    def __str__(self):
+        sep = " "
+        return ("ot: {0}".format(self.object_type)
+                + sep + "otv: {0}".format(self.object_type_version)
+                + sep + "sk: {0}".format(self.storage_key)
+                + sep + "m: {0}".format('...')
+                + sep + "ss: {0}".format('...')
+                + sep + "st: {0}".format('...')
+                + sep + "ttl: {0}".format(self.ttl_seconds)
+                )
+
+    def __repr__(self):
+        self.__str__()
 
     @classmethod
     def from_json_str(cls, json_str):

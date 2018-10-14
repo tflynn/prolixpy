@@ -25,3 +25,6 @@ class TestIndex(unittest.TestCase):
         self.assertEqual(ide.mapping, new_ide.mapping)
         # Check fields not set
         self.assertEqual(ide.ttl_seconds, new_ide.ttl_seconds)
+
+        # Check the __eq__ implementation
+        self.assertEqual(ide, new_ide)

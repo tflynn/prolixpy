@@ -45,8 +45,9 @@ class Config:
         self.conf_data = {}
         self.env_conf_dir_name = "PROLIX_CONF_DIR"
         self.env_conf_name = "PROLIX_CONF"
+        self.package_dir = PACKAGE_DIR
         self.loaded = False
-        self.logger = logger if logger else standard_logger.get_logger('Config', level_str="DEBUG", console=True)
+        self.logger = logger if logger else standard_logger.get_logger('Config', level_str="DEBUG")
 
     def get_data(self):
         """
@@ -56,7 +57,7 @@ class Config:
         :rtype: dict
         """
         if self.is_loaded():
-            self.logger.debug("Config.get_data data data already loaded")
+            self.logger.debug("Config.get_data data is already loaded")
         else:
             self.logger.debug("Config.get_data data is not yet loaded so load it")
             self.load_all_data()
@@ -71,6 +72,20 @@ class Config:
         :rtype: boolean
         """
         return self.loaded
+
+    def set_package_dir(self, package_dir):
+        """
+        Set the (relative) path to be used to satisfy symbolic 'package' path references
+
+        'package dir' is typically generated at the top of a file
+        using something similar to 'PACKAGE_DIR = path.dirname(__file__)'
+
+        :param str package_dir: Fully qualified package dir
+        :return: Current config object
+        :rtype: Config
+        """
+        self.package_dir = package_dir
+        return self
 
     def add_search_path(self, dir_or_path):
         """
@@ -192,7 +207,7 @@ class Config:
             expanded_search_path = None
             if search_path in self.default_sym_names:
                 if search_path == 'package':
-                    expanded_search_path = PACKAGE_DIR
+                    expanded_search_path = self.package_dir
                 elif search_path == 'home':
                     expanded_search_path = os.environ['HOME']
                 elif search_path == 'env':
@@ -202,8 +217,8 @@ class Config:
                         expanded_search_path = None
                 else:
                     pass
-            elif not search_path.startswith('/'):
-                expanded_search_path = path.join(PACKAGE_DIR, search_path)
+            elif self.package_dir and not search_path.startswith('/'):
+                expanded_search_path = path.join(self.package_dir, search_path)
             else:
                 pass
 

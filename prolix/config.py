@@ -180,6 +180,27 @@ class Config:
         self.env_conf_dir_name = env_var_name
         return self
 
+    def absolute_package_location(self, package_relative_path):
+        """
+        Find the absolute path for a package relative reference
+
+        :param str package_relative_path: Package relative path e.g. prolix/prolix_conf.json
+        :return: All matching paths that contain the file (in sys.path order)
+        :rtype: list(str)
+        """
+        qualified_paths = []
+        for sys_path in sys.path:
+            if path.abspath(package_relative_path):
+                qualified_path = package_relative_path
+            else:
+                qualified_path = path.normpath(path.join(
+                    sys_path, package_relative_path
+                ))
+            if path.exists(qualified_path):
+                qualified_paths.append(qualified_path)
+
+        return qualified_paths
+
     def expand_search_paths(self):
         """
         Expand the search paths to fully qualified file paths.
@@ -207,7 +228,12 @@ class Config:
             expanded_search_path = None
             if search_path in self.default_sym_names:
                 if search_path == 'package':
-                    expanded_search_path = self.package_dir
+                    package_relative_name = path.join(self.package_dir, self.config_name)
+                    package_locations = self.absolute_package_location(package_relative_name)
+                    if package_locations:
+                        expanded_search_path = package_locations[0]
+                    else:
+                        expanded_search_path = self.package_dir
                 elif search_path == 'home':
                     expanded_search_path = os.environ['HOME']
                 elif search_path == 'env':

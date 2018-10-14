@@ -9,6 +9,10 @@ setup(
     author_email='tracysflynn@gmail.com',
     license='MIT',
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
+    package_data={
+        # If any package contains *.txt or *.rst files, include them:
+        'prolix': ['*.json']
+    },
     install_requires=[
         'standard_logger>=0.4',
         'run_command>=1.0',

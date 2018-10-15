@@ -190,6 +190,7 @@ class Config:
         """
         qualified_paths = []
         for sys_path in sys.path:
+            print("sys_path {0}".format(sys_path))
             if package_relative_path.startswith('/'):
                 qualified_path = package_relative_path
             else:

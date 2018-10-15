@@ -167,6 +167,9 @@ class RandomInts:
     MIN_INT = - MAX_INT
     SECURE_RNG = random.SystemRandom()
 
+    def __init__(self, logger=None):
+        self.logger = logger if logger else standard_logger.get_logger("RandomInts")
+
     def secure_rng(self):
         """
         Get a secure RNG
@@ -212,11 +215,11 @@ class RandomInts:
 
 class RandValues:
 
-    def __init__(self):
-
-        self.word_dict = words.load_data(dataset='5000words')
+    def __init__(self,logger=None):
+        self.logger = logger if logger else standard_logger.get_logger("RandValues")
+        self.word_dict = words.load_data(dataset='5000words', logger=self.logger)
         self.word_count = len(self.word_dict)
-        self.rng = RandomInts()
+        self.rng = RandomInts(self.logger)
 
     def random_kv(self, max_val_len=10, min_val_len=5):
         random_key = str(self.rng.random_int(lower=1, upper=self.word_count))

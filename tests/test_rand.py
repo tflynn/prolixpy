@@ -1,14 +1,14 @@
 import unittest
 
+from tests.base_test_class import BaseTestClass
 from prolix import rand
-import standard_logger
 
 
 class TestRand(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls.logger = standard_logger.get_logger('TestRand', console=True)
+        cls.logger = BaseTestClass.get_logger()
 
     def test_001_two_random_strings_not_equal(self):
         rs = rand.RandomString(logger=self.logger)
@@ -28,7 +28,7 @@ class TestRand(unittest.TestCase):
         self.assertNotEqual(0, len(str1))
 
     def test_005_two_random_int_arrays_not_equal(self):
-        random_ints = rand.RandomInts()
+        random_ints = rand.RandomInts(logger=self.logger)
         array_len = 15
         ints1 = random_ints.random_ints(array_len)
         ints2 = random_ints.random_ints(array_len)
@@ -36,13 +36,13 @@ class TestRand(unittest.TestCase):
             self.assertNotEqual(ints1[i], ints2[i])
 
     def test_006_random_ints_len(self):
-        random_ints = rand.RandomInts()
+        random_ints = rand.RandomInts(logger=self.logger)
         array_len = 7
         ints1 = random_ints.random_ints(array_len)
         self.assertEqual(len(ints1),array_len)
 
     def test_007_rand_values(self):
-        random_values = rand.RandValues()
+        random_values = rand.RandValues(logger=self.logger)
         min_val = 1
         max_val = 15
         key, val = random_values.random_kv(max_val_len=max_val, min_val_len=min_val)

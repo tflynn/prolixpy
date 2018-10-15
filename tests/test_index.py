@@ -1,22 +1,27 @@
 import unittest
 
+from tests.base_test_class import BaseTestClass
 from prolix import rand
 from prolix import index
 
 
 class TestIndex(unittest.TestCase):
 
+    @classmethod
+    def setUpClass(cls):
+        cls.logger = BaseTestClass.get_logger()
+
     def test_001_test_index_entry_serialization(self):
-        rs = rand.RandomString()
-        ris = rand.RandomInts()
-        ide = index.IndexEntry()
+        rs = rand.RandomString(logger=self.logger)
+        ris = rand.RandomInts(logger=self.logger)
+        ide = index.IndexEntry(logger=self.logger)
         ide.storage_key = rs.random_utf8_string(len=20)
         ide.steno_text = rs.random_utf8_string(len=100)
         ide.steno_seq = ris.random_ints(len=100)
         ide.mapping = ris.random_ints(len=200)
 
         json_str = ide.to_json_str()
-        new_ide = index.IndexEntry.from_json_str(json_str)
+        new_ide = index.IndexEntry.from_json_str(json_str,logger=self.logger)
 
         # Check fields explicitly set
         self.assertEqual(ide.storage_key, new_ide.storage_key)

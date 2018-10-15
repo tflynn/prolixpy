@@ -1,5 +1,6 @@
 {
   "redis_host": "127.0.0.1",
   "redis_port": 6379,
-  "redis_password": null
+  "redis_password": null,
+  "default_store_expiration_secs": 300
 }

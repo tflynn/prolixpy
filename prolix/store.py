@@ -3,15 +3,16 @@ import sys
 import redis
 
 import standard_logger
-from prolix import rand
+from prolix.config import Config
 
 
 class BaseStore:
     """Base class for all store implementations"""
 
-    def __init__(self):
-        self.logger = standard_logger.get_logger("store")
-        self.default_expiration_seconds = 5 * 60
+    def __init__(self, logger=None):
+        self.logger = logger if logger else standard_logger.get_logger("Store")
+        self.conf_data = Config.conf().get_data()
+        self.default_expiration_seconds = self.conf_data['default_store_expiration_secs']
         self.expiration_seconds = self.default_expiration_seconds
 
     def store(self, key=None, item=None):
@@ -58,16 +59,17 @@ class BaseStore:
 class RedisStore(BaseStore):
     """Store implementation to access a Redis instance"""
 
-    def __init__(self, host=None, port=None, password=None):
-        super(RedisStore, self).__init__()
-        self.host = host if host else "127.0.0.1"
-        self.port = port if port else 6379
-        self.password = password
+    def __init__(self, host=None, port=None, password=None,logger=None):
+        super(RedisStore, self).__init__(logger=logger)
+        self.host = host if host else self.conf_data['redis_host']
+        self.port = port if port else self.conf_data['redis_port']
+        self.password = password if password \
+            else self.conf_data['redis_password']
         try:
             self.redis = redis.StrictRedis(
-                host = self.host,
-                port = self.port,
-                password = self.password
+                host=self.host,
+                port=self.port,
+                password=self.password
             )
         except Exception as e:
             self.logger.error("Error initializing Redis {0}".format(e))

@@ -40,6 +40,7 @@ class Config:
         self.full_search_paths = []
         self.loaded_search_paths = []
         self.config_name = 'prolix_conf.json'
+        self.use_default_sym_names = True
         self.default_sym_names = ['package', 'home', 'env']
         self.sym_names = []
         self.conf_data = {}
@@ -47,6 +48,7 @@ class Config:
         self.env_conf_name = "PROLIX_CONF"
         self.package_dir = PACKAGE_DIR
         self.loaded = False
+        self.paths_expanded = False
         self.logger = logger if logger else standard_logger.get_logger('Config', level_str="DEBUG")
 
     def get_data(self):
@@ -69,9 +71,18 @@ class Config:
         Have the configurations been loaded?
 
         :return: True if loaded, False otherwise
-        :rtype: boolean
+        :rtype: bool
         """
         return self.loaded
+
+    def are_paths_expanded(self):
+        """
+        Have the paths been expanded?
+
+        :return: True if expanded, False otherwise
+        :rtype: bool
+        """
+        return self.paths_expanded
 
     def set_package_dir(self, package_dir):
         """
@@ -125,7 +136,7 @@ class Config:
         """
         return self.loaded_search_paths
 
-    def conf_name(self, config_name):
+    def set_conf_name(self, config_name):
         """
         Set the name of the configuration file.
 
@@ -149,7 +160,7 @@ class Config:
         self.config_name = path.normpath(self.config_name)
         return self.config_name
 
-    def sym_name(self, sym_name):
+    def add_sym_name(self, sym_name):
         """
         Add a symbolic name to the search path
 
@@ -160,7 +171,7 @@ class Config:
         self.search_paths.append(sym_name)
         return self
 
-    def default_sym_names(self):
+    def get_default_sym_names(self):
         """
         Get default symbolic names
 
@@ -190,15 +201,15 @@ class Config:
         """
         qualified_paths = []
         for sys_path in sys.path:
-            print("sys_path {0}".format(sys_path))
-            if package_relative_path.startswith('/'):
+            if path.isabs(package_relative_path):
                 qualified_path = package_relative_path
             else:
                 qualified_path = path.normpath(path.join(
                     sys_path, package_relative_path
                 ))
             if path.exists(qualified_path):
-                qualified_paths.append(qualified_path)
+                if qualified_path not in qualified_paths:
+                    qualified_paths.append(qualified_path)
 
         return qualified_paths
 
@@ -213,52 +224,62 @@ class Config:
         """
         # Only load once
         if self.is_loaded():
-            self.logger("Config.expand_search_paths have already been expanded, so don't do it again")
+            self.logger.debug("Config.expand_search_paths data is already loaded, so paths have already been expanded. Don't do it again")
             return self.full_search_paths
 
-        # Append default symbolic names without duplicates
-        for default_sym_name in self.default_sym_names:
-            if default_sym_name not in self.search_paths:
-                self.search_paths.append(default_sym_name)
+        # Only expand once
+        if self.are_paths_expanded():
+            self.logger.debug("Config.expand_search_paths have already been expanded, so don't do it again")
+            return self.full_search_paths
+
+        # Add in symbolic names
+        if self.use_default_sym_names:
+            # Append default symbolic names without duplicates
+            for default_sym_name in self.get_default_sym_names():
+                if default_sym_name not in self.search_paths:
+                    self.search_paths.append(default_sym_name)
+
+        self.search_paths.extend(self.sym_names)
 
         self.logger.debug("Config.expand_search_paths search paths {0}".format(self.search_paths))
 
         # Expand any unqualified paths and symbolic names - maintain order
-        expanded_search_paths = deque()
+        expanded_search_paths = []
         for search_path in self.search_paths:
             expanded_search_path = None
-            if search_path in self.default_sym_names:
-                if search_path == 'package':
-                    package_relative_name = path.join(self.package_dir, self.config_name)
-                    package_locations = self.absolute_package_location(package_relative_name)
-                    if package_locations:
-                        expanded_search_path = package_locations[0]
-                    else:
-                        expanded_search_path = self.package_dir
-                elif search_path == 'home':
-                    expanded_search_path = os.environ['HOME']
-                elif search_path == 'env':
-                    if self.env_conf_dir_name in os.environ:
-                        expanded_search_path = os.environ[self.env_conf_dir_name]
-                    else:
-                        expanded_search_path = None
+            if search_path == 'package':
+                package_relative_name = path.join(self.package_dir, self.config_name)
+                package_locations = self.absolute_package_location(package_relative_name)
+                if package_locations:
+                    expanded_search_path = package_locations[0]
                 else:
-                    pass
-            elif self.package_dir and not search_path.startswith('/'):
-                expanded_search_path = path.join(self.package_dir, search_path)
+                    expanded_search_path = self.package_dir
+            elif search_path == 'home':
+                expanded_search_path = os.environ['HOME']
+            elif search_path == 'env':
+                if self.env_conf_dir_name in os.environ:
+                    expanded_search_path = os.environ[self.env_conf_dir_name]
             else:
-                pass
+                expanded_search_path = search_path
 
+            # Qualify path with package directory if path is not absolute
+            if expanded_search_path and self.package_dir and not path.isabs(expanded_search_path):
+                expanded_search_path = path.join(self.package_dir, expanded_search_path)
+
+            # Add config name to any path that doesn't already have it
             if expanded_search_path:
-                # Add config name to any path that doesn't already have it
                 config_name = self.get_conf_name()
                 if not expanded_search_path.endswith(config_name):
                     expanded_search_path = path.join(expanded_search_path, config_name)
 
-                expanded_search_paths.append(path.normpath(expanded_search_path))
+            # Normalize any path that's present
+            if expanded_search_path:
+                expanded_search_path = path.normpath(expanded_search_path)
+                expanded_search_paths.append(expanded_search_path)
 
         self.full_search_paths = list(expanded_search_paths)
         self.logger.debug("Config.expand_search_paths full search paths {0}".format(self.full_search_paths))
+        self.paths_expanded = True
         return self.full_search_paths
 
     def load_all_data(self):
@@ -289,10 +310,3 @@ class Config:
         self.logger.debug("Config.load_all_data loaded search paths {0}".format(self.loaded_search_paths))
         self.logger.debug("Config.load_all_data data has been loaded {0}".format(self.conf_data))
         return self.conf_data
-
-
-if __name__ == '__main__':
-    conf = Config.conf()
-    print(conf.get_data())
-    print(conf.get_data())
-

@@ -12,6 +12,7 @@ class TestIndex(unittest.TestCase):
         cls.logger = BaseTestClass.get_logger()
 
     def test_001_test_index_entry_serialization(self):
+        self.logger.debug("TestIndex: test_001_test_index_entry_serialization")
         rs = rand.RandomString(logger=self.logger)
         ris = rand.RandomInts(logger=self.logger)
         ide = index.IndexEntry(logger=self.logger)

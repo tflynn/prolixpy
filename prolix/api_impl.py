@@ -18,16 +18,16 @@ class ApiImpl:
             else self.conf_data['default_store_expiration_secs']
         self.steno = steno.Steno(logger=self.logger)
 
-    def add_error(self, error_text, status={}):
+    def add_error(self, errors, status={}):
         """
         Add error text to a dict
 
-        :param str error_text: Error text
+        :param list(str) errors: Error text
         :param dict status: Dict containing status information
         :return: No return. Status dict is updated in place
         """
         all_errors = status['errors'] if 'errors' in status else []
-        all_errors.append("ApiImpl.obscure no text specified")
+        all_errors.extend(errors)
         status["errors"] = all_errors
         return
 
@@ -42,16 +42,17 @@ class ApiImpl:
         """
         status = {}
         if not text:
-            self.add_error("ApiImpl.obscure no text specified", status=status)
+            self.add_error(["ApiImpl.obscure no text specified"], status=status)
             return status
 
         if not expiration_secs:
-            expiration_secs = self.self.default_store_expiration_secs
+            expiration_secs = self.default_store_expiration_secs
 
         results = self.steno.obscure(text=text, expiration_secs=expiration_secs)
+
         if 'errors' in results:
-            self.add_error(results['error'], status=status)
-            del results['error']
+            self.add_error(results['errors'], status=status)
+            del results['errors']
 
         status.update(results)
         return status
@@ -67,16 +68,16 @@ class ApiImpl:
         """
         status = {}
         if not key:
-            self.add_error("ApiImpl.clarify no key specified", status=status)
+            self.add_error(["ApiImpl.clarify no key specified"], status=status)
         if not text:
-            self.add_error("ApiImpl.clarify no obscured text specified", status=status)
+            self.add_error(["ApiImpl.clarify no obscured text specified"], status=status)
         if status:
             return status
 
         results = self.steno.clarify(key=key, text=text)
         if 'errors' in results:
-            self.add_error(results['error'], status=status)
-            del results['error']
+            self.add_error(results['errors'], status=status)
+            del results['errors']
 
         status.update(results)
         return status

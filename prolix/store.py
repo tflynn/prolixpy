@@ -55,6 +55,15 @@ class BaseStore:
         """
         raise Exception("Not implemented")
 
+    def get_expiration_seconds(self):
+        """
+        Get the actual expiration seconds setting
+
+        :return: expiration seconds
+        :rtype: int
+        """
+        return self.expiration_seconds
+
 
 class RedisStore(BaseStore):
     """Store implementation to access a Redis instance"""
@@ -65,6 +74,7 @@ class RedisStore(BaseStore):
         self.port = port if port else self.conf_data['redis_port']
         self.password = password if password \
             else self.conf_data['redis_password']
+
         try:
             self.redis = redis.StrictRedis(
                 host=self.host,
@@ -81,32 +91,10 @@ class RedisStore(BaseStore):
 
         :param str key: Key under which to store the item
         :param obj item: Item to store. If not a string, must respond to str(obj)
-        :return: True if no error, False otherwise
+        :return: {success, errors, expiration secs}
+        :rtype: dict
         """
-        errors = False
-        if not key:
-            self.logger.error("RedisStore:store_with_expiration no key specified")
-            errors = True
-        if not item:
-            self.logger.error("RedisStore:store_with_expiration no item specified")
-            errors = True
-        if not isinstance(item, str):
-            try:
-                item = str(item)
-            except Exception as e:
-                self.logger.error(
-                    ("RedisStore:store_with_expiration error converting object {0}"
-                                   + " to string {1}").format(key,e))
-                errors = True
-
-        if not errors:
-            try:
-                self.redis.set(key, item)
-            except Exception as e:
-                self.logger.error("RedisStore:store error storing object {0} {1}".format(key, e))
-                errors = True
-
-        return not errors
+        return self.store_with_expiration(key=key, item=item, exp_seconds=self.expiration_seconds)
 
     def store_with_expiration(self, key=None, item=None, exp_seconds=None):
         """
@@ -115,22 +103,28 @@ class RedisStore(BaseStore):
         :param str key: Key under which to store the item
         :param obj item: Item to store. If not a string, must respond to str(obj)
         :param int exp_seconds: Expiration in seconds
-        :return: True if no error, False otherwise
+        :return: {success, errors, expiration secs}
+        :rtype: dict
         """
-        errors = False
+
+        errors = []
+
         if not key:
-            self.logger.error("RedisStore:store_with_expiration no key specified")
-            errors = True
+            error_text = "RedisStore:store_with_expiration no key specified"
+            self.logger.error(error_text)
+            errors.append(error_text)
         if not item:
-            self.logger.error("RedisStore:store_with_expiration no item specified")
-            errors = True
+            error_text = "RedisStore:store_with_expiration no item specified"
+            self.logger.error(error_text)
+            errors.append(error_text)
         if not isinstance(item, str):
             try:
                 item = str(item)
             except Exception as e:
-                self.logger.error(("RedisStore:store_with_expiration error converting object {0}"
-                                   + " to string {1}").format(key,e))
-                errors = True
+                error_text = ("RedisStore:store_with_expiration error converting object {0}"
+                                   + " to string {1}").format(key,e)
+                self.logger.error(error_text)
+                errors.append(error_text)
 
         self.expiration_seconds = exp_seconds if exp_seconds else self.default_expiration_seconds
 
@@ -138,60 +132,89 @@ class RedisStore(BaseStore):
             try:
                 self.redis.setex(key, self.expiration_seconds, item)
             except Exception as e:
-                self.logger.error("RedisStore:store_with_expiration error storing object {0} {1}".format(key, e))
-                errors = True
+                error_text = "RedisStore:store_with_expiration error storing object {0} {1}".format(key, e)
+                self.logger.error(error_text)
+                errors.append(error_text)
 
-        return not errors
+        result = {}
+        if errors:
+            result['success'] = False
+            result['errors'] = errors
+        else:
+            result['success'] = True
+            result['expiration_secs'] = self.expiration_seconds
+
+        return result
 
     def get(self, key=None):
         """
         Get an item using the specified key. Item will be returned in its string representation - str(obj)
 
         :param str key: Key under which to store the item
-        :return: item in string form or None if any error
-        :rtype: str
+        :return: {success, item, errors}
+        :rtype: dict
         """
-        errors = False
+        errors = []
         if not key:
-            self.logger.error("RedisStore:get no key specified")
-            errors = True
+            error_text = "RedisStore:get no key specified"
+            self.logger.error(error_text)
+            errors.append(error_text)
 
         if not errors:
             try:
                 if self.redis.exists(key):
-                    value = self.redis.get(key).decode("UTF8")
-                    return value
+                    item = self.redis.get(key).decode("UTF8")
                 else:
-                    self.logger.warning("RedisStore:get key {0} does not exist".format(key))
+                    error_text = "RedisStore:get key {0} does not exist".format(key)
+                    self.logger.warning(error_text)
+                    errors.append(error_text)
             except Exception as e:
-                self.logger.error("RedisStore:get error getting object {0} {1}".format(key, e))
+                error_text = "RedisStore:get error getting object {0} {1}".format(key, e)
+                self.logger.error(error_text)
+                errors.append(error_text)
 
-        return None
+        result = {}
+        if errors:
+            result['success'] = False
+            result['errors'] = errors
+        else:
+            result['success'] = True
+            result['item'] = item
+
+        return result
 
     def delete(self, key=None):
         """
         Delete an entry from the store
 
         :param str key: Key to delete
-        :return: True if success, False otherwise
-        :rtype: bool
+        :return: {success, errors}
+        :rtype: dict
         """
-        errors = False
+        errors = []
         if not key:
-            self.logger.error("RedisStore:delete no key specified")
-            errors = True
-        # if key and not self.check_key(key):
-        #     errors = True
+            error_text = "RedisStore:delete no key specified"
+            self.logger.error(error_text)
+            errors.append(error_text)
 
         if not errors:
             try:
                 if self.redis.exists(key):
                     self.redis.delete(key)
                 else:
-                    self.logger.warning("RedisStore:delete key {0} does not exist".format(key))
-                    errors = True
+                    error_text = "RedisStore:delete key {0} does not exist".format(key)
+                    self.logger.warning(error_text)
+                    errors.append(error_text)
             except Exception as e:
-                self.logger.error("RedisStore:get error deleting object {0} {1}".format(key, e))
-                errors = True
+                error_text = "RedisStore:delete error deleting object {0} {1}".format(key, e)
+                self.logger.error(error_text)
+                errors.append(error_text)
 
-        return not errors
+        result = {}
+        if errors:
+            result['success'] = False
+            result['errors'] = errors
+        else:
+            result['success'] = True
+
+        return result

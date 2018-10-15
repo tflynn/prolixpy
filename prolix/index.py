@@ -13,7 +13,6 @@ class IndexEntry:
         self.object_type = "IndexType"
         self.object_type_version = "V1"
         self.storage_key = ""
-        self.mapping = []
         self.steno_seq = []
         self.ttl_seconds = 60 * IndexEntry.DEFAULT_TTL_MINS
 
@@ -40,7 +39,7 @@ class IndexEntry:
         :rtype: str
         """
         dict_to_serialize = self.remove_from_dict(self.__dict__, ['logger'])
-        print("to_json_str dict_to_serialize {0}".format(dict_to_serialize))
+        # print("to_json_str dict_to_serialize {0}".format(dict_to_serialize))
         return json.dumps(dict_to_serialize)
 
     def __eq__(self, other):

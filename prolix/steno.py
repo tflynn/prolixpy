@@ -49,8 +49,17 @@ class Steno:
             # If padding is of length 2, previous char was a space
             current_char = self.rasbf.random_char_by_freq()
             padding_size = 2
-            padding = self.rasbf.random_char_by_freq() + \
-                      self.rasbf.random_char_by_freq()
+            padding = self.rasbf.random_ascii_string_by_freq(len=padding_size)
+        elif current_char == ".":
+            # If padding is of length 3, previous char was a '.'
+            current_char = self.rasbf.random_char_by_freq()
+            padding_size = 3
+            padding = self.rasbf.random_ascii_string_by_freq(len=padding_size)
+        elif current_char == ",":
+            # If padding is of length 4, previous char was a ','
+            current_char = self.rasbf.random_char_by_freq()
+            padding_size = 4
+            padding = self.rasbf.random_ascii_string_by_freq(len=padding_size)
         else:
             current_char = None
             padding_size = None
@@ -150,6 +159,10 @@ class Steno:
             current_char = ' '
         elif interpolation_count == 2:
             current_char = "\n"
+        elif interpolation_count == 3:
+            current_char = "."
+        elif interpolation_count == 4:
+            current_char = ","
         else:
             current_char = None
 

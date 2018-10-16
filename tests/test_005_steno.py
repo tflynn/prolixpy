@@ -22,10 +22,15 @@ class TestSteno(unittest.TestCase):
             settings_key = results['key']
             obscured_text = results['obscured_text']
 
+            self.logger.debug("TestSteno.test_001_test_obfuscate_and_clarify obscured text")
+            self.logger.debug(obscured_text)
+
             results = self.steno.clarify(key=settings_key, text=obscured_text)
             if results['success']:
                 self.logger.debug("TestSteno.test_001_test_obfuscate_and_clarify clarify succeeded")
                 clarified_text = results['clarified_text']
+                self.logger.debug("TestSteno.test_001_test_obfuscate_and_clarify clarified text")
+                self.logger.debug(clarified_text)
                 self.assertEqual(clear_text, clarified_text)
             else:
                 self.logger.debug("TestSteno.test_001_test_obfuscate_and_clarify clarify failed")

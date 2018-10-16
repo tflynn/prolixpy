@@ -16,6 +16,8 @@ class Steno:
         self.conf_data = Config.conf(logger=self.logger).get_data()
         self.default_expiration_seconds = self.conf_data['default_store_expiration_secs']
         self.redis_store = store.RedisStore(logger=self.logger)
+        # Initialize RandomAsciiStringByFrequency because of file loads needed
+        self.rasbf = rand.RandomAsciiStringByFrequency(logger=self.logger).dispatch()
 
     def obscure_chars(self, num=None, min_chars=5,  max_chars=50):
         secure_rng = random.SystemRandom()
@@ -36,6 +38,25 @@ class Steno:
             paddings.append("".join(list(padding)))
 
         return paddings
+
+    def obscure_special_characters(self, current_char):
+        if current_char == ' ':
+            # If padding is of length 1, previous char was a space
+            current_char = self.rasbf.random_char_by_freq()
+            padding_size = 1
+            padding = self.rasbf.random_char_by_freq()
+        elif current_char == "\n":
+            # If padding is of length 2, previous char was a space
+            current_char = self.rasbf.random_char_by_freq()
+            padding_size = 2
+            padding = self.rasbf.random_char_by_freq() + \
+                      self.rasbf.random_char_by_freq()
+        else:
+            current_char = None
+            padding_size = None
+            padding = None
+
+        return padding_size, padding, current_char
 
     def obscure(self, text=None, expiration_secs=None):
         """
@@ -68,8 +89,23 @@ class Steno:
 
             # Get the number of random characters to add
             interpolation_count = interpolation_counts[i]
-            # Get a random string of len(interpolation_count) with characters in the correct range
-            interpolation_chars = rs.random_utf8_string(len=interpolation_count, lower=min_ord, upper=max_ord)
+
+            # Deal with a couple of special characters
+            padding_size, padding, replacement_char = \
+                self.obscure_special_characters(current_char)
+
+            if padding:
+                interpolation_counts[i] = padding_size
+                interpolation_chars = padding
+                current_char = replacement_char
+            elif rand.RandomString.is_alpha_char_ascii(current_char):
+                # If ASCII alpha char use frequency based string
+                interpolation_chars = \
+                    self.rasbf.random_ascii_string_by_freq(len=interpolation_count)
+            else:
+                # Get a random string of len(interpolation_count) with characters in the correct range
+                interpolation_chars = rs.random_utf8_string(len=interpolation_count, lower=min_ord, upper=max_ord)
+
             # Save the current character, then the interpolated characters
             obscured_text_dq.append(current_char)
             obscured_text_dq.append(interpolation_chars)
@@ -109,6 +145,16 @@ class Steno:
 
         return results
 
+    def clarify_special_characters(self, interpolation_count):
+        if interpolation_count == 1:
+            current_char = ' '
+        elif interpolation_count == 2:
+            current_char = "\n"
+        else:
+            current_char = None
+
+        return current_char
+
     def clarify(self, key=None, text=None):
         """
         Clarify text previously obscured
@@ -132,8 +178,16 @@ class Steno:
             obscured_text_pos = 0
             for ic_pos in range(0, len(interpolation_counts)):
                 interpolation_count = interpolation_counts[ic_pos]
-                # First character is real
-                current_char = obscured_text[obscured_text_pos]
+
+                replacement_char = self.clarify_special_characters(
+                    interpolation_count)
+
+                if replacement_char:
+                    current_char = replacement_char
+                else:
+                    # First character is real
+                    current_char = obscured_text[obscured_text_pos]
+
                 # Save off current char
                 clarified_text.append(current_char)
                 # Skip the current character and padding

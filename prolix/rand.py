@@ -1,8 +1,14 @@
 import sys
+import os
+from os import path
 import random
+from collections import deque
+import json
+
 import standard_logger
 import words
 
+from prolix.paths import get_data_path
 
 class CodePointRanges:
     """Legal code point ranges according to Unicode spec"""
@@ -159,6 +165,19 @@ class RandomString:
         except UnicodeEncodeError:
             return False
 
+    @classmethod
+    def is_alpha_char_ascii(cls, char):
+        """
+        Check to see whether this character is ASCII alpha
+
+        :param str char: Character (string) to check
+        :return: True if character is ASCII alpha, False otherwise
+        :rtype: bool
+        """
+        ord_val = ord(char)
+        return (ord('A') <= ord_val <= ord('Z')) or (ord('a') <= ord_val <= ord('z'))
+
+
 
 class RandomInts:
     """Utility class for generating sets of random int values"""
@@ -245,3 +264,212 @@ class RandValues:
             elements[0], num_element[-4:], elements[1], elements[2]
         )
         return password
+
+
+class RandomAsciiStringByFrequency:
+    """Transform text using letter frequency data"""
+
+    def __init__(self, *args, **kwargs):
+
+        self.all_args = list(args)
+        self.args = self.all_args
+
+        self.cli = True if 'cli' in kwargs and kwargs['cli'] else False
+
+        # Should be from config file
+        self.frequency_file_name = 'frequencies-1.json'
+        self.minimum_input_text_length = 4
+        self.letter_randomizer_file_name = "letter_randomizer_ascii.json"
+        self.min_padding_size = 8
+        self.max_padding_size = 64
+
+        self.logger = kwargs['logger'] if 'logger' in kwargs \
+            else standard_logger.get_logger('randascii', level_str='DEBUG', console=True)
+
+        # Define properties
+        self.input_file_name = None
+        self.input_data = None
+        self.input_data_length = None
+        self.frequency_data = None
+        self.letters_by_frequency = None
+        self.normalized_frequency_data = None
+        self.lookup_letter_data = None
+        self.lookup_letter_data_len = None
+        self.secure_rng = random.SystemRandom()
+
+    def dispatch(self):
+
+        result = self.process_arguments()
+        if not result['success']:
+            return {"success": False, "error": result['error']}
+
+        if not self.lookup_data_present():
+
+            result = self.load_letter_frequencies()
+            if not result['success']:
+                return {"success": False, "error": result['error']}
+
+            result = self.generate_lookup_data()
+            if not result['success']:
+                return {"success": False, "error": result['error']}
+
+        result = self.load_lookup_data()
+        if not result['success']:
+            return {"success": False, "error": result['error']}
+
+        result = self.load_input_file()
+        if not result['success']:
+            return {"success": False, "error": result['error']}
+
+        return self
+
+    def process_arguments(self):
+        base_file_name = path.basename(__file__)
+        if len(self.all_args) > 0:
+            if self.all_args[0].endswith(base_file_name):
+                self.args = self.all_args[1:]
+
+        if self.cli:
+            if len(self.args) < 1:
+                error_text = "Usage: {0} <input file>".format(base_file_name)
+                self.logger.error(error_text)
+                return {"success": False, "error": error_text}
+            else:
+                self.input_file_name = self.args[0]
+                return {"success": True}
+        else:
+            return {"success": True}
+
+    def load_letter_frequencies(self):
+        file_path = get_data_path(self.frequency_file_name)
+        with open(file_path, 'r') as f:
+            self.frequency_data = json.loads(f.read().strip())
+
+        self.letters_by_frequency = self.frequency_data["by_frequency"]
+        return {"success": True}
+
+    def load_input_file(self):
+
+        if self.input_file_name:
+            with open(self.input_file_name,'r') as f:
+                self.input_data = f.read()
+
+            self.input_data_length = len(self.input_data)
+            if self.input_data_length < self.minimum_input_text_length:
+                error_text = "Text too short. Must be at least {0} chars".format(
+                    self.minimum_input_text_length)
+                self.logger.error(error_text)
+                return {"success": False, "error": error_text}
+
+            # # For testing
+            # self.input_data = "Twas brillig and the slithy toves"
+            # self.input_data_length = len(self.input_data)
+
+        return {"success": True}
+
+    def lookup_data_present(self):
+        file_path = get_data_path(self.letter_randomizer_file_name)
+        return path.exists(file_path)
+
+    def load_lookup_data(self):
+        file_path = get_data_path(self.letter_randomizer_file_name)
+        with open(file_path, 'r') as f:
+            json_str = f.read()
+        json_data = json.loads(json_str)
+        self.lookup_letter_data = json_data['data']
+        self.lookup_letter_data_len = len(self.lookup_letter_data)
+        return {'success': True}
+
+    def generate_lookup_data(self):
+        # Generate modified frequency table
+        normalized_frequency_data = []
+        total_normalized_frequencies = 0
+        for item in self.frequency_data["by_frequency"]:
+            letter = item[0]
+            original_frequency = item[1]
+            normalized_frequency = round(float(original_frequency),3) * 1000
+            if normalized_frequency < 1:
+                normalized_frequency = 1
+            normalized_frequency = int(normalized_frequency)
+            total_normalized_frequencies += normalized_frequency
+            normalized_frequency_data.append([letter,normalized_frequency])
+
+        self.normalized_frequency_data = normalized_frequency_data
+
+        letter_strings = deque()
+        for item in normalized_frequency_data:
+            letter = item[0]
+            frequency = item[1]
+            letter_string = letter * frequency
+            letter_strings.append(letter_string)
+
+        self.lookup_letter_data = "".join(letter_strings)
+        lookup_letter_data_json = {
+            'data': self.lookup_letter_data
+        }
+        with open(self.letter_randomizer_file_name,'w') as f:
+            f.write(json.dumps(lookup_letter_data_json))
+
+        return {"success": True}
+
+    def random_char_by_freq(self):
+        rand_offset = self.secure_rng.randint(0, self.lookup_letter_data_len - 1)
+        return self.lookup_letter_data[rand_offset]
+
+    def random_ascii_string_by_freq(self, len=20):
+        random_string_q = deque()
+        for i in range(0,len):
+            random_string_q.append(self.random_char_by_freq())
+        random_string = "".join(random_string_q)
+        return random_string
+
+    def obscure(self):
+        obscured_text_q = deque()
+        obscure_seq_q = deque()
+
+        for i in range(0, self.input_data_length):
+            current_char = self.input_data[i]
+            if current_char == ' ':
+                # If padding is of length 1, previous char was a space
+                current_char = self.random_char_by_freq()
+                padding_size = 1
+                padding = self.random_char_by_freq()
+            elif  current_char == "\n":
+                # If padding is of length 2, previous char was a space
+                current_char = self.random_char_by_freq()
+                padding_size = 2
+                padding = self.random_char_by_freq() + self.random_char_by_freq()
+            else:
+                padding_size = self.secure_rng.randint(self.min_padding_size, self.max_padding_size)
+                padding = self.random_ascii_string_by_freq(padding_size)
+
+            obscured_text_q.append(current_char)
+            obscure_seq_q.append(padding_size)
+            obscured_text_q.append(padding)
+
+        return {
+            'success': True,
+            'obscured_text': "".join(obscured_text_q),
+            'obscuration_seq': list(obscure_seq_q)
+        }
+
+    def clarify(self, obscured_text=None, key=None, obscured_seq=None):
+        clarified_text_q = deque()
+        current_text_pos = 0
+        current_seq_pos = 1 # for debuging
+        for current_seq in obscured_seq:
+            if current_seq == 1:
+                current_char = ' '
+                current_text_pos += 2
+            elif current_seq == 2:
+                current_char = "\n"
+                current_text_pos += 3
+            else:
+                current_char = obscured_text[current_text_pos]
+                current_text_pos += 1 + current_seq
+
+            clarified_text_q.append(current_char)
+            current_seq_pos += 1
+
+        clarified_text = "".join(clarified_text_q)
+        return {"success": True, "clarified_text": clarified_text}

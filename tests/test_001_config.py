@@ -127,4 +127,3 @@ class TestConfig(unittest.TestCase):
         del os.environ['PROLIX_CONF']
         os.remove(test_conf_file_path)
         self.assertEqual(loaded_data["key1"], "value1")
-

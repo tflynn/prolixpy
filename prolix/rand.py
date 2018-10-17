@@ -8,7 +8,8 @@ import json
 import standard_logger
 import words
 
-from prolix.paths import get_data_path
+from pyutils import paths
+
 
 class CodePointRanges:
     """Legal code point ranges according to Unicode spec"""
@@ -341,7 +342,7 @@ class RandomAsciiStringByFrequency:
             return {"success": True}
 
     def load_letter_frequencies(self):
-        file_path = get_data_path(self.frequency_file_name)
+        file_path = paths.get_data_path(file_name=self.frequency_file_name, package_name='prolix')
         with open(file_path, 'r') as f:
             self.frequency_data = json.loads(f.read().strip())
 
@@ -368,11 +369,11 @@ class RandomAsciiStringByFrequency:
         return {"success": True}
 
     def lookup_data_present(self):
-        file_path = get_data_path(self.letter_randomizer_file_name)
+        file_path = paths.get_data_path(file_name=self.letter_randomizer_file_name, package_name='prolix')
         return path.exists(file_path)
 
     def load_lookup_data(self):
-        file_path = get_data_path(self.letter_randomizer_file_name)
+        file_path = paths.get_data_path(file_name=self.letter_randomizer_file_name, package_name='prolix')
         with open(file_path, 'r') as f:
             json_str = f.read()
         json_data = json.loads(json_str)

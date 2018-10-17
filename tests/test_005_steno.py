@@ -3,7 +3,7 @@ import unittest
 from tests.base_test_class import BaseTestClass
 
 from prolix import steno
-from prolix.paths import get_data_path
+from pyutils import paths
 
 
 class TestSteno(unittest.TestCase):
@@ -13,7 +13,7 @@ class TestSteno(unittest.TestCase):
         cls.logger = BaseTestClass.get_logger()
         cls.steno = steno.Steno(logger=cls.logger)
 
-        with open(get_data_path('gettysburg.txt')) as f:
+        with open(paths.get_data_path(file_name='gettysburg.txt', package_name='prolix')) as f:
             cls.test_data = f.read()
 
     def test_001_test_obfuscate_and_clarify(self):

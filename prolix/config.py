@@ -5,7 +5,7 @@ import json
 from collections import deque
 import standard_logger
 
-from prolix.paths import get_package_path
+from pyutils import paths
 
 
 class Config:
@@ -46,7 +46,7 @@ class Config:
         self.conf_data = {}
         self.env_conf_dir_name = "PROLIX_CONF_DIR"
         self.env_conf_name = "PROLIX_CONF"
-        self.package_dir = get_package_path()
+        self.package_dir = paths.get_package_path(package_name='prolix')
         self.loaded = False
         self.paths_expanded = False
         self.logger = logger if logger else standard_logger.get_logger('Config', level_str="DEBUG")

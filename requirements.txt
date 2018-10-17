@@ -1,3 +1,4 @@
 git+https://github.com/tflynn/standard_logger.git@master#egg=standard_logger
 git+https://github.com/tflynn/run_command.git@master#egg=run_command
 git+https://github.com/tflynn/words.git@master#egg=words
+git+https://github.com/tflynn/pyutils.git@master#egg=pyutils

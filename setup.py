@@ -17,7 +17,7 @@ setup(
         'run_command>=1.0',
         'words>=0.1',
         'redis>=2.10.6',
-        'setuptools>=39.0.0'],
+        "pyutils>=0.1"],
     test_suite='nose.collector',
     tests_require=['nose'],
     zip_safe=False

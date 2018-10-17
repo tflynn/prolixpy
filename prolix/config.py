@@ -36,6 +36,9 @@ class Config:
         return Config(logger=logger)
 
     def __init__(self, logger=None):
+        self.package_name = paths.guess_package()
+        self.package_dir = paths.get_package_path(package_name=self.package_name)
+        self.data_dir = paths.get_data_path(package_name=self.package_name)
         self.search_paths = []
         self.full_search_paths = []
         self.loaded_search_paths = []
@@ -46,7 +49,6 @@ class Config:
         self.conf_data = {}
         self.env_conf_dir_name = "PROLIX_CONF_DIR"
         self.env_conf_name = "PROLIX_CONF"
-        self.package_dir = paths.get_package_path(package_name='prolix')
         self.loaded = False
         self.paths_expanded = False
         self.logger = logger if logger else standard_logger.get_logger('Config', level_str="DEBUG")
@@ -248,12 +250,7 @@ class Config:
         for search_path in self.search_paths:
             expanded_search_path = None
             if search_path == 'package':
-                package_relative_name = path.join(self.package_dir, self.config_name)
-                package_locations = self.absolute_package_location(package_relative_name)
-                if package_locations:
-                    expanded_search_path = package_locations[0]
-                else:
-                    expanded_search_path = self.package_dir
+               expanded_search_path = self.package_dir
             elif search_path == 'home':
                 expanded_search_path = os.environ['HOME']
             elif search_path == 'env':
@@ -263,7 +260,7 @@ class Config:
                 expanded_search_path = search_path
 
             # Qualify path with package directory if path is not absolute
-            if expanded_search_path and self.package_dir and not path.isabs(expanded_search_path):
+            if expanded_search_path and not path.isabs(expanded_search_path):
                 expanded_search_path = path.join(self.package_dir, expanded_search_path)
 
             # Add config name to any path that doesn't already have it

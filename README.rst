@@ -14,21 +14,20 @@ Installation
 From the root of this repo:
 
 ::
-    python3 setup.py install
+    pip3 install .
 
 Usage examples
 --------------
-
-API in preparation. Meanwhile ...
 
 *To get an obscured message*
 
 ::
 
-    from prolix import steno
+    import prolix
+    prolix_api = prolix.api()
 
-    steno = steno.Steno()
-    results = steno.obscure(text=clear_text, expiration_secs=30)
+    clear_text = "Mary had a little lamb whose fleece was white as snow"
+    results = prolix_api.obscure(text=clear_text)
     key = results['key']
     obscured_text = results['obscured_text']
 
@@ -38,10 +37,10 @@ The key is valid for expiration_secs seconds.
 
 ::
 
-    from prolix import steno
+    import prolix
+    prolix_api = prolix.api()
 
-    steno = steno.Steno()
-    results = steno.clarify(key=key, text=obscured_text)
+    results = prolix_api.clarify(key=key, text=obscured_text)
     clarified_text = results['clarified_text']
 
 Once the key has expired, the text cannot (ever) be clarified by anyone.

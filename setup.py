@@ -21,5 +21,10 @@ setup(
         "json_config>=0.1"],
     test_suite='nose.collector',
     tests_require=['nose'],
-    zip_safe=False
+    zip_safe=False,
+    entry_points={
+        'console_scripts': [
+            'prolix=prolix.cli:main',
+        ],
+    },
 )

@@ -1,6 +1,7 @@
 import standard_logger
-from prolix.config import Config
+
 from prolix import steno
+from json_config import JsonConfig
 
 
 class ApiImpl:
@@ -8,7 +9,9 @@ class ApiImpl:
 
     def __init__(self, **kwargs):
         self.logger = kwargs['logger'] if 'logger' in kwargs else standard_logger.get_logger('prolix_api')
-        self.conf_data = Config.conf().get_data()
+        self.conf = JsonConfig.conf(logger=self.logger, package_name='prolix')
+        self.conf.config_name = 'prolix_conf.json'
+        self.conf_data = self.conf.get_data()
         self.redis_host = kwargs['redis_host'] if 'redis_host' in kwargs else self.conf_data['redis_host']
         self.redis_port = kwargs['redis_port'] if 'redis_port' in kwargs else self.conf_data['redis_port']
         self.redis_password = kwargs['redis_password'] if 'redis_password' in kwargs \

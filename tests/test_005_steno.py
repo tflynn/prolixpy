@@ -3,7 +3,7 @@ import unittest
 from tests.base_test_class import BaseTestClass
 
 from prolix import steno
-from pyutils import paths
+from pyxutils import paths
 
 
 class TestSteno(unittest.TestCase):

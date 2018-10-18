@@ -1,5 +1,6 @@
 import standard_logger
-from prolix.config import Config
+from json_config import JsonConfig
+
 
 class BaseTestClass():
 
@@ -10,7 +11,9 @@ class BaseTestClass():
         if not BaseTestClass.TEST_LOGGER:
             BaseTestClass.TEST_LOGGER = standard_logger.get_logger('tests', level_str='DEBUG')
         self.logger = BaseTestClass.TEST_LOGGER
-        self.conf = Config.conf(logger=self.logger)
+        self.conf = JsonConfig.conf(logger=self.logger, package_name='prolix')
+        self.conf.config_name = 'prolix_conf.json'
+        self.conf_data = self.conf.get_data()
 
     @classmethod
     def get_logger(cls):

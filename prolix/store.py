@@ -3,7 +3,7 @@ import sys
 import redis
 
 import standard_logger
-from prolix.config import Config
+from json_config import JsonConfig
 
 
 class BaseStore:
@@ -11,7 +11,9 @@ class BaseStore:
 
     def __init__(self, logger=None):
         self.logger = logger if logger else standard_logger.get_logger("Store")
-        self.conf_data = Config.conf().get_data()
+        self.conf = JsonConfig.conf(logger=self.logger, package_name='prolix')
+        self.conf.config_name = 'prolix_conf.json'
+        self.conf_data = self.conf.get_data()
         self.default_expiration_seconds = self.conf_data['default_store_expiration_secs']
         self.expiration_seconds = self.default_expiration_seconds
 

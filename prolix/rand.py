@@ -8,7 +8,7 @@ import json
 import standard_logger
 import words
 
-from pyutils import paths
+from pyxutils import paths
 
 
 class CodePointRanges:
@@ -177,7 +177,6 @@ class RandomString:
         """
         ord_val = ord(char)
         return (ord('A') <= ord_val <= ord('Z')) or (ord('a') <= ord_val <= ord('z'))
-
 
 
 class RandomInts:

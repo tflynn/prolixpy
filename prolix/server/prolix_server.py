@@ -1,20 +1,19 @@
 import sys
 import os
 from os import path
-
+import json
 import tempfile
 
-import standard_logger
-LOGGER = standard_logger.get_logger('prolix_server', level_str='ERROR', console=True)
-
-from pyxutils import paths as pxpaths
-TEMPLATES_DIR = path.normpath(path.join(pxpaths.get_package_path('prolix'),'server','templates'))
-
-from flask import Flask, render_template, request
-
-app=Flask("prolix_server", template_folder=TEMPLATES_DIR)
+from flask import Flask, render_template, request, jsonify
 
 import prolix
+import standard_logger
+from pyxutils import paths as pxpaths
+
+LOGGER = standard_logger.get_logger('prolix_server', level_str='ERROR', console=True)
+TEMPLATES_DIR = path.normpath(path.join(pxpaths.get_package_path('prolix'),'server','templates'))
+
+app = Flask("prolix_server", template_folder=TEMPLATES_DIR)
 
 
 @app.route("/", methods=['GET'])
@@ -23,7 +22,6 @@ def display_form():
         return render_template('main_form.html', clear_text="Enter some text here")
     else:
         return "Error in server"
-
 
 @app.route("/obscure", methods=['POST'])
 def obscure_data():
@@ -102,3 +100,65 @@ def clarify_data():
 
     else:
         return "Unsupported method"
+
+
+@app.route("/api/obscure", methods=['POST'])
+def api_obscure_data():
+    try:
+        if request.method == 'POST':
+            raw_data = request.get_data().decode("UTF8")
+            obscure_request_json = json.loads(raw_data)
+            clear_text = obscure_request_json['clearText']
+            papi = prolix.api(logger=LOGGER)
+            results = papi.obscure(text=clear_text,expiration_secs=600)
+            if results['success']:
+                key = results['key']
+                obscured_text = results['obscured_text']
+                out = {
+                    "key": key,
+                    "obscured_text": obscured_text
+                }
+            else:
+                msg = "Server error API Error {0)".format(results['errors'])
+                LOGGER.error(msg)
+                out = {"error": msg}
+        else:
+            msg = "/api/obscure only supports POST"
+            out = {"error": msg}
+
+    except Exception as e:
+        msg = "/api/obscure Server error {0}".format(e)
+        LOGGER.error(msg)
+        out = {"error": msg}
+
+    return jsonify(out)
+
+
+@app.route("/api/clarify", methods=['POST'])
+def api_clarify_data():
+    if request.method == 'POST':
+        try:
+            raw_data = request.get_data().decode("UTF8")
+            clarify_request_json = json.loads(raw_data)
+            key = clarify_request_json['key']
+            obscured_text = clarify_request_json['obscured_text']
+            papi = prolix.api(logger=LOGGER)
+            results = papi.clarify(text=obscured_text,key=key)
+            if results['success']:
+                clarified_text = results['clarified_text']
+                out = {"clarified_text": clarified_text}
+            else:
+                msg = "Server error API Error {0)".format(results['errors'])
+                LOGGER.error(msg)
+                out = {"error": msg}
+
+        except Exception as e:
+            msg = "Server error {0}".format(e)
+            LOGGER.error(msg)
+            out = {"error": msg}
+
+    else:
+        msg = "/api/clarify only supports POST"
+        out = {"error": msg}
+
+    return jsonify(out)

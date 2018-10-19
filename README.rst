@@ -17,6 +17,7 @@ Installation
 From the root of this repo:
 
 ::
+
     pip3 install .
 
 Usage examples

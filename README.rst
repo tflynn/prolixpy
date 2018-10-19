@@ -6,7 +6,10 @@ Experiments in stenography in Python
 Prequisites
 -----------
 
-For local testing, a running Redis instance.
+For local testing
+
+* Running Redis instance.
+* Flask package installed (pip3 install Flask)
 
 Installation
 ------------
@@ -45,3 +48,15 @@ The key is valid for expiration_secs seconds.
 
 Once the key has expired, the text cannot (ever) be clarified by anyone.
 The clarified text is not stored anywhere.
+
+Demo server
+-----------
+
+::
+
+    prolix
+
+Go to local server_
+
+.. _server: http://127.0.0.1:5000
+

@@ -1,0 +1,37 @@
+<!doctype html>
+<head><meta charset="utf-8"/></head>
+<title>Prolix - Simple stenography demo</title>
+<h1>Prolix - Simple stenography demo</h1>
+<h2>Enter text in box below</h2>
+<br/>
+<form action="/obscure" method="post" name="clearTextForm" id="clearTextFormId" accept-charset="UTF-8">
+<textarea id="clearTextId" name="clearText" rows="8" cols="100" form="clearTextFormId">
+{% if clear_text %}{{ clear_text }}{% endif %}
+</textarea>
+<br/>
+<button type="submit">Obscure text</button><br>
+</form>
+<br/>
+<h2>A portion of the obfuscated text will appear below</h2>
+
+<form action="/clarify" method="post" name="obscureTextForm" id="obscureTextFormId">
+{% if key %}<br/><b>Key: {{ key }}</b><br/><br/>{% endif %}
+<textarea id="partialObscureTextId" name="partialObscureText" rows="2" cols="100" form="obscureTextFormId" accept-charset="UTF-8">
+{% if obscured_text %}{{ obscured_text[0:80] }}{% endif %}
+</textarea>
+{% if obscured_text %}
+<input type="hidden" id="clearTextFileNameId" name="hiddenClearTextFileName" value="{{ clear_text_file_name }}">
+<input type="hidden" id="obscureKeyId" name="hiddenObscureKey" value="{{ key }}">
+<input type="hidden" id="obscureTextFileNameId" name="hiddenObscureTextFileName" value="{{ obscured_text_file_name }}">
+{% endif %}
+<br/>
+<button type="submit">Re-clarify text</button><br>
+</form>
+<br/>
+<h2>The clarified text will appear below </h2>
+{% if clarified_text %}
+<br/>
+<form>
+<textarea rows="8" cols="100">{{ clarified_text }}</textarea>
+</form>
+{% endif %}

@@ -10,7 +10,7 @@ setup(
     license='MIT',
     packages=find_packages(exclude=["*.tests", "*.tests.*", "tests.*", "tests"]),
     package_data={
-        'prolix': ['*.json','**/*.json']
+        'prolix': ['*.json','**/*.json', 'server/templates/*.html']
     },
     install_requires=[
         'standard_logger>=0.4',
@@ -18,7 +18,8 @@ setup(
         'words>=0.1',
         'redis>=2.10.6',
         "pyxutils>=0.1",
-        "json_config>=0.1"],
+        "json_config>=0.1",
+        "Flask>=1.0.2"],
     test_suite='nose.collector',
     tests_require=['nose'],
     zip_safe=False,

@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en-US">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+    body {background-color: powderblue; font-family: Arial;}
+    h1 {font-size: 24pt; border: 10px;}
+    h2 {font-size: 20pt; border: 10px;}
+    form {border: 10px;}
+    button {font-size: 12pt; border: 10px; background-color: bisque;}
+    p {font-size: 14pt; border: 5px;}
+    div.note {border: 5px;}
+    #entry1_1 {font-size: 16pt; border: 10px;}
+    #entry2_1 {font-size: 16pt; border: 10px;}
+    #entry3_1 {font-size: 16pt; border: 10px;}
+
+    </style>
+
+    <script>
+
+    function obscure_submit(event) {
+        let promise = fetch('http://localhost:5000/api/obscure', {
+                method: "POST",
+                headers: {
+                   "Accept": "application/json",
+                   "Content-Type": "application/json; charset=utf-8"
+                },
+                body: JSON.stringify({"clearText": document.getElementById("entry1_1").value})
+            })
+            .then(function(response){
+                return response.json();
+            })
+            .then(function(json){
+                var text_area_2 = document.getElementById("entry2_1");
+                text_area_2.innerText = JSON.stringify(json, null, 2);
+            });
+
+    }
+
+    function clarify_submit(event) {
+
+        var obscured_info = document.getElementById("entry2_1").value;
+        var obscured_info_json = JSON.parse(obscured_info);
+        clarify_request = {
+            "key": obscured_info_json["key"],
+            "obscured_text": obscured_info_json["obscured_text"]
+        };
+
+        fetch('http://localhost:5000/api/clarify', {
+                method: "POST",
+                headers: {
+                   "Accept": "application/json",
+                   "Content-Type": "application/json; charset=utf-8"
+                },
+                body: JSON.stringify(clarify_request)
+            })
+            .then(function(response){
+                return response.json();
+            })
+            .then(function(json){
+                let text_area_3 = document.getElementById("entry3_1");
+                text_area_3.innerText = JSON.stringify(json, null, 2);
+            });
+
+    }
+
+    </script>
+
+    <title>Prolix API demo</title>
+</head>
+
+<body>
+
+<h1>Prolix API - Stenography Demo</h1>
+
+<h2>Enter text to obscure below</h2>
+<form id="entry1" onsubmit="obscure_submit(event); return false;">
+<textarea id="entry1_1" name="entry1_1" rows="8" cols="100" form="entry1">
+Enter text to obscure here
+</textarea>
+<br/>
+<button type="submit">Obscure text</button>
+</form>
+
+<br/>
+
+<h2>The obscured text will appear below.</h2>
+<div class="note">
+<p><em>Note that the obscured text will change every time the 'Obscure text' button is clicked.</em></p>
+</div>
+<form id="entry2" onsubmit="clarify_submit(event); return false;">
+<textarea id="entry2_1" name="entry2_1" rows="8" cols="100" form="entry2">
+Obscured text will appear here
+</textarea>
+<br/>
+<button type="submit">Clarify text</button>
+</form>
+
+<br/>
+
+<h2>The clarified text will appear below</h2>
+<div class="note">
+<p><em>Note that to clarify the text both the key and the obscured text are required. </em></p>
+<p>Neither the clear text nor the obscured text are stored anywhere (except on this form!).</p>
+<p>By default, the key will expire after 5 minutes. Once that happens, the obscured text cannot ever be clarified again.</p>
+</div>
+
+<form id="entry3" onsubmit="return false;">
+<textarea id="entry3_1" name="entry3_1" rows="8" cols="100" form="entry3">
+Clarified text will appear here
+</textarea>
+</form>
+
+<br/><br/><br/>
+<p>Copyright 2018 - Tracy Flynn - All Rights Reserved.</p>
+<br/><br/><br/>
+</body>
+
+</html>

@@ -53,11 +53,7 @@ The clarified text is not stored anywhere.
 Demo server
 -----------
 
-::
+Run 'prolix' command.
 
-    prolix
-
-Go to local server_
-
-.. _server: http://127.0.0.1:5000
+Then go to the demo page on local server at http://localhost:5000/api/form
 

@@ -4,7 +4,7 @@ from os import path
 import json
 import tempfile
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, Response
 
 import prolix
 import standard_logger
@@ -18,6 +18,7 @@ app = Flask("prolix_server", template_folder=TEMPLATES_DIR)
 
 @app.route("/", methods=['GET'])
 def display_form():
+    # TODO Clear
     if request.method == 'GET':
         return render_template('main_form.html', clear_text="Enter some text here")
     else:
@@ -102,22 +103,30 @@ def clarify_data():
         return "Unsupported method"
 
 
+@app.route("/api/form", methods=['GET'])
+def display_api_form():
+    if request.method == 'GET':
+        request.args = {}
+        return render_template('index.html')
+    else:
+        msg = "/api only supports GET"
+        LOGGER.error(msg)
+        return msg
+
+
 @app.route("/api/obscure", methods=['POST'])
 def api_obscure_data():
     try:
         if request.method == 'POST':
             raw_data = request.get_data().decode("UTF8")
             obscure_request_json = json.loads(raw_data)
-            clear_text = obscure_request_json['clearText']
+            clear_text = obscure_request_json['clearText'].strip()
             papi = prolix.api(logger=LOGGER)
             results = papi.obscure(text=clear_text,expiration_secs=600)
             if results['success']:
                 key = results['key']
                 obscured_text = results['obscured_text']
-                out = {
-                    "key": key,
-                    "obscured_text": obscured_text
-                }
+                out = {"key": key, "obscured_text": obscured_text}
             else:
                 msg = "Server error API Error {0)".format(results['errors'])
                 LOGGER.error(msg)
